@@ -10,7 +10,6 @@
   libxcrypt,
   util-linux,
 }:
-
 stdenv.mkDerivation rec {
   pname = "inetutils";
   version = "2.7";
@@ -56,29 +55,30 @@ stdenv.mkDerivation rec {
   # Don't use help2man if cross-compiling
   # https://lists.gnu.org/archive/html/bug-sed/2017-01/msg00001.html
   # https://git.congatec.com/yocto/meta-openembedded/blob/3402bfac6b595c622e4590a8ff5eaaa854e2a2a3/meta-networking/recipes-connectivity/inetutils/inetutils_1.9.1.bb#L44
-  preConfigure =
-    let
-      isCross = stdenv.hostPlatform != stdenv.buildPlatform;
-    in
+  preConfigure = let
+    isCross = stdenv.hostPlatform != stdenv.buildPlatform;
+  in
     lib.optionalString isCross ''
       export HELP2MAN=true
     '';
 
-  configureFlags = [
-    "--with-ncurses-include-dir=${ncurses.dev}/include"
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isMusl [
-    # Musl doesn't define rcmd
-    "--disable-rcp"
-    "--disable-rsh"
-    "--disable-rlogin"
-    "--disable-rexec"
-  ]
-  ++ lib.optional stdenv.hostPlatform.isDarwin "--disable-servers";
+  configureFlags =
+    [
+      "--with-ncurses-include-dir=${ncurses.dev}/include"
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isMusl [
+      # Musl doesn't define rcmd
+      "--disable-rcp"
+      "--disable-rsh"
+      "--disable-rlogin"
+      "--disable-rexec"
+    ]
+    ++ lib.optional stdenv.hostPlatform.isDarwin "--disable-servers";
 
+  hardeningDisable = [] ++ lib.optional stdenv.hostPlatform.isDarwin "format";
   doCheck = true;
 
-  installFlags = [ "SUIDMODE=" ];
+  installFlags = ["SUIDMODE="];
 
   postInstall = ''
     mkdir $apparmor
@@ -89,7 +89,7 @@ stdenv.mkDerivation rec {
       include <abstractions/base>
       include <abstractions/consoles>
       include <abstractions/nameservice>
-      include "${apparmorRulesFromClosure { name = "ping"; } [ stdenv.cc.libc ]}"
+      include "${apparmorRulesFromClosure {name = "ping";} [stdenv.cc.libc]}"
       capability net_raw,
       network inet raw,
       network inet6 raw,
@@ -112,13 +112,13 @@ stdenv.mkDerivation rec {
     homepage = "https://www.gnu.org/software/inetutils/";
     license = lib.licenses.gpl3Plus;
 
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = with lib.maintainers; [matthewbauer];
     platforms = lib.platforms.unix;
 
     /**
-      The `logger` binary from `util-linux` is preferred over `inetutils`.
-      To instead prioritize this package, set a _lower_ `meta.priority`, or
-      use e.g. `lib.setPrio 5 inetutils`.
+    The `logger` binary from `util-linux` is preferred over `inetutils`.
+    To instead prioritize this package, set a _lower_ `meta.priority`, or
+    use e.g. `lib.setPrio 5 inetutils`.
     */
     priority = (util-linux.meta.priority or lib.meta.defaultPriority) + 1;
   };
