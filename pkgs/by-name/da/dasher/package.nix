@@ -68,6 +68,7 @@ stdenv.mkDerivation {
     license = lib.licenses.gpl2Only;
     maintainers = [ ];
     platforms = lib.platforms.all;
+    badPlatforms = lib.platforms.darwin;
     mainProgram = "dasher";
   };
 }
